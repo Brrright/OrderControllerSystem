@@ -1,6 +1,8 @@
 # McDonaldOrderControllerSystem
 FeedMe Software Engineer Take Home Assignment -  McDonald Order Controller System
-Requirements
+by Candidate: CHIAH MING LIANG
+
+Requirements:
   When "New Normal Order" clicked, a new order should show up Pending Area.
   When "New VIP Order" clicked, a new order should show up in Pending Area. It should place in-front of all existing "Normal" order but behind of all existing "VIP" order.
   The Order number should be unique and increasing.
