@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>McDonald Order Controller System</title>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
+        crossorigin="anonymous"/>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" 
+        integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" 
+        crossorigin="anonymous"></script>
+    </head>
+    <style>
+        .button {
+            background-color:rgb(152,251,152);
+            color:black;
+            border-color:white;
+            height:5vw;
+        }
+
+        .button:focus {
+            background-color:rgb(152,251,0,0.7);
+        }
+
+        .flex-container-column {
+            display: flex;
+            flex-direction: column;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .flex-container-row {
+            display: flex;
+            flex-wrap: wrap; 
+            justify-content: center;
+            width: 100%;
+        }
+
+        .orderStyle {
+            width:300px; 
+            height:80px; 
+            display:flex; 
+            align-items:center; 
+            justify-content:center;
+            border-radius:5px;
+            background-color:#f1e9d9;
+            margin:10px;
+        }
+
+        .processing-order {
+            width:300px; 
+            height:80px; 
+            display:flex; 
+            align-items:center; 
+            justify-content:center;
+            border-radius:5px;
+            background-color:#fac354;
+            margin:10px;
+        }
+
+        .table-style {
+            width:90%;
+            display:flex;
+            flex-direction: column;
+            justify-content: center;
+            margin:auto;
+        }
+        
+        #customer-page, #manager-page {
+            display: none;
+        }
+
+
+    </style>
+    <body>
+        <div class="text-center mt-4">
+            <h1>McDonald Order Controller System</h1>
+        </div>
+
+        <!-- Navigational -->
+        <div class="w-100 pt-3 pb-5 d-flex justify-center">
+            <button class="w-50 button" onclick="page('customer')"><h5>Customer Page</h5></button>
+            <button class="w-50 button" onclick="page('manager')"><h5>Manager Page</h5></button>
+            
+        </div>
+        
+        <!-- Customer Page -->
+        <div id="customer-page">
+            <div class="d-flex justify-content-around mb-4">
+                <button class="btn btn-primary" onclick="generateOrder('Normal')">New Normal Order</button>
+                <button class="btn btn-primary" onclick="generateOrder('VIP')">New VIP Order</button>
+            </div>
+            <br>
+            <div class="flex-container-row">
+                <div class="bg-light flex-container-column w-50">
+                    <div><h3><b>PENDING</b></h3></div>
+                    <div style="width: 100%; height:20px; background-color:white;"></div>
+                </div>
+                <div class="bg-info flex-container-column w-50">
+                    <div><h3><b>COMPLETE</b></h3></div>
+                    <div style="width: 100%; height:20px; background-color:white;"></div>
+                </div>
+            </div>
+            <div class="flex-container-row">
+                <div class="bg-light flex-container-column w-50">
+                    <div id="vip-pending-task">
+                        <!-- new div order element will be put here -->
+                    </div>
+                    <div id="pending-task">
+                        <!-- new div order element will be put here -->
+                    </div>
+                    
+                </div>
+                <div class="bg-light flex-container-column w-50">
+                    <div id="completed-task" >
+                        <!-- new div completed order will appended to here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manager Page -->
+        <div id="manager-page">
+            <div class="d-flex justify-content-around mb-4">
+                <button class="btn btn-primary" onclick="createBot()">+ Bot</button>
+                <button class="btn btn-primary" onclick="destroyBot()">- Bot</button>
+            </div>
+            <div class="flex-container-column mt-5 table-style text-center">
+                <table class="table table-bordered">
+                    <thead>
+                    <tr class="table-light h3">
+                        <th>Bot</th>
+                        <th>Status</th>
+                        <th>Working On...</th>
+                    </tr>
+                    </thead>
+                    <tbody id="working-bot">
+                    <!-- bot created will be append to here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+            const normalOrder = [];
+            const vipOrder = [];
+            const completedOrder = [];
+            const botList = [];
+
+
+            function page(role) {
+                if (role == "customer") {
+                    document.getElementById('customer-page').style.display = 'block';
+                    document.getElementById('manager-page').style.display = 'none';
+                }
+                else {
+                    document.getElementById('customer-page').style.display = 'none';
+                    document.getElementById('manager-page').style.display = 'block';
+                }
+            }
+
+            function generateID(qty) {
+                let id = qty;
+                return {
+                    next: function() {
+                        id+=1;
+                        return{value: id, done: false};
+                    }
+                };
+            }
+
+            function calculateAmount(list, statusType) {
+                var number = 0;
+                for (const object of list) {
+                    if (object.status == statusType) {
+                        number += 1;
+                    }
+                }
+                return number;
+            }
+
+
+            function generateOrder(type) {
+                // check if there is any order exist, to generate id for the order
+                var num_of_vip_pending = document.getElementById('vip-pending-task').children.length;
+                var num_of_normal_pending = document.getElementById('pending-task').children.length;
+                var num_of_complete = document.getElementById('completed-task').children.length;
+                var num_of_order = num_of_vip_pending + num_of_normal_pending + num_of_complete;
+                    // console.log(num_of_order);
+
+                // create order object
+                const idNum = generateID(num_of_order);
+                const order = {
+                    id: idNum.next().value,
+                    orderType:type,
+                    status:"pending"
+                }
+                    // console.log(order)
+                
+                // sorting order type
+                if (order.orderType == "VIP") {
+                    vipOrder.push(order);
+                        // console.log(vipOrder);
+                    var pendingArea = document.getElementById('vip-pending-task');
+                }
+                else {
+                    normalOrder.push(order);
+                        // console.log(normalOrder);
+                    var pendingArea = document.getElementById('pending-task');
+                }
+                appendOrder(order, pendingArea);
+            }
+
+            function appendOrder(order, pendingArea) {
+                var newOrder = document.createElement('div');
+                newOrder.setAttribute("id", "order-"+ order.id);
+                newOrder.setAttribute("class", "orderStyle");
+                newOrder.innerText = "[" + order.orderType + "] Order - " + order.id;
+                pendingArea.appendChild(newOrder);
+
+                var number_of_normal = calculateAmount(normalOrder, "pending");
+                var number_of_vip = calculateAmount(vipOrder, "pending");
+                var number_of_order = number_of_normal + number_of_vip;
+
+                // console.log("here is num of order", number_of_order);
+
+                if (number_of_order > 0) {
+                    selectOrderList();
+                }
+                return;
+            }
+
+            function selectOrderList() {
+                var number_of_bot_available = calculateAmount(botList, "IDLE");
+                var number_of_vip_order = calculateAmount(vipOrder, "pending");
+
+                console.log("bot: ",number_of_bot_available,"VIPorder: ", number_of_vip_order);
+
+                if (number_of_bot_available == 0) {
+                    return;
+                }
+
+                orderList = vipOrder;
+                // when there is no more vip order (pending) && there is bot who is free, then we run normal order
+                if (number_of_vip_order == 0 && number_of_bot_available > 0) {
+                    orderList = normalOrder;
+                }
+
+                console.log("NEWest order List (selectorderlist)", orderList);
+                updateOrderAndBot(orderList);
+            }
+
+            function updateOrderAndBot(orderList) {
+                // asc, going through every order, then start process each of them
+                for (const orderObj of orderList) {
+                // status checking, (to avoid process order that is under process)
+                    if (orderObj.status == "pending" || orderObj.status == "initializing") {
+                        orderObj.status = "processing";
+                        var orderDiv = document.getElementById("order-"+orderObj.id);
+                        orderDiv.setAttribute("class","processing-order")
+                        orderDiv.innerText = "["+ orderObj.orderType + "] Order- " + orderObj.id +  " (Processing)";
+
+                        for (const botObj of botList) {
+                            if (botObj.status == "initializing" || botObj.status == "IDLE") {
+                                // change bot's status and working on property
+                                botObj.status = "Working";
+                                botObj.workingOn = "order-" + orderObj.id;
+                                console.log(botList);
+                                var botRow = document.getElementById("bot-"+botObj.id).children;
+                                botRow[1].innerText = botObj.status;
+                                botRow[2].innerText = botObj.workingOn;
+                                processOrder(orderObj, botObj);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            function processOrder(orderObj, botObj) {
+                const sleep = (milliseconds) => {
+                    return new Promise(resolve => setTimeout(resolve, milliseconds))
+                }
+
+                // every 5 second check if bot is deleted, dk why for loop cant work with this
+                sleep(5000).then(()=> {
+                    if (botObj.isInterrupted == false) {
+                        console.log("Middle of processing...")
+                        sleep(5000).then(() => {
+                            if (botObj.isInterrupted == false) {
+                                console.log("Finish processing!");
+                                completeOrder(orderObj, botObj);
+                            }
+                            else {
+                                console.log("Interrupted - 10th s")
+                                discardChanges(orderObj, botObj);
+                            }
+                        })
+                    }
+                    else {
+                        console.log("Interrupted - 5th s")
+                        discardChanges(orderObj, botObj);
+                    }
+                })
+            }
+
+            function completeOrder(orderObj, botObj) {
+                // change the status of the order
+                orderObj.status = "completed";
+
+                // remove order from div, list
+                var orderDiv = document.getElementById("order-"+orderObj.id);
+                orderDiv.parentNode.removeChild(orderDiv);
+
+                // create completed order div, list
+                var completeOrderDiv = document.getElementById("completed-task");
+
+                var number_of_normal = calculateAmount(normalOrder, "pending");
+                var number_of_vip = calculateAmount(vipOrder, "pending");
+                var number_of_order = number_of_normal + number_of_vip;
+
+                botObj.status = "IDLE";
+                botObj.workingOn = "-";
+                
+                var botRow = document.getElementById("bot-"+botObj.id).children;
+                botRow[1].innerText = botObj.status;
+                botRow[2].innerText = botObj.workingOn;
+
+                appendOrder(orderObj, completeOrderDiv);
+
+                // call selectOrderList to initiate next order
+                // check if there is more work to do, if no change back status too
+            }
+            
+
+            function createBot() {
+                var botArea = document.getElementById("working-bot");
+                var currentBotNumber = botArea.children.length;
+                const idNum = generateID(currentBotNumber);
+                
+                const bot = {
+                    id: idNum.next().value,
+                    status: "IDLE",
+                    workingOn: "-",
+                    isInterrupted: false
+                }
+
+                // creating a new tr 
+                var tr = document.createElement("tr");
+                tr.setAttribute("id", "bot-" + bot.id);
+                botArea.appendChild(tr);
+                // creating new td
+                tr.appendChild(document.createElement("td")).innerText = "Bot - " + bot.id;
+                tr.appendChild(document.createElement("td")).innerText = bot.status;
+                tr.appendChild(document.createElement("td")).innerText = bot.workingOn;
+
+                // push bot object into the list
+                botList.push(bot);
+                selectOrderList();
+            }
+
+            function destroyBot() {
+                // // determines which bot is the newest one (this should be deleted)
+                var botArea = document.getElementById("working-bot");
+                var currentBotNumber = botArea.children.length;
+                console.log(currentBotNumber);
+
+                if (currentBotNumber > 0) {
+                    if (confirm("Are you sure you wanted to delete " + "Bot-" + currentBotNumber + " *(Order in progress will be discarded)*") == true) {
+                        for (const botObj of botList) {
+                            if (botObj.id == currentBotNumber) {
+                                botObj.isInterrupted = true;
+
+                                var botDiv = document.getElementById("bot-"+botObj.id);
+                                botDiv.parentNode.removeChild(botDiv);
+                                selectOrderList();
+                                break;
+                            }
+                        }  
+                    }
+                    else {
+                        return;
+                    }
+                }
+                else {
+                    alert("No bot is created.")
+                }
+            }
+            
+            function discardChanges(orderObj, botObj) {
+                // change back order and bot obj's status
+                // change the inner text in div
+
+                orderObj.status = "pending";
+                botObj.status = "IDLE";
+                botObj.workingOn = "-";
+                botObj.isInterrupted = false;
+
+                var orderDiv = document.getElementById("order-" + orderObj.id);
+                orderDiv.setAttribute("class", "orderStyle");
+                orderDiv.innerText = "["+ orderObj.orderType + "] Order- " + orderObj.id + " Sorry, Please wait. (Bot deleted)";
+
+                var index = botList.indexOf(botObj);
+                botList.splice(index, 1);
+            }
+        </script>
+    </body>
+</html>
